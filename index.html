@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔒 SafeCall — защищённое общение</title>
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; }
+  body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .app {
+    width: 100%;
+    max-width: 500px;
+    background: rgba(20, 20, 35, 0.85);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    overflow: hidden;
+  }
+  .header {
+    padding: 20px 25px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .header h1 { font-size: 22px; font-weight: 600; }
+  .header .shield { font-size: 28px; }
+  .user-info {
+    margin-left: auto;
+    font-size: 13px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .content { padding: 25px; }
+  .section { margin-bottom: 20px; }
+  .section-title {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #a0a0c0;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  input {
+    width: 100%;
+    padding: 14px 16px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    color: #fff;
+    font-size: 14px;
+    transition: all 0.2s;
+  }
+  input:focus {
+    outline: none;
+    border-color: #667eea;
+    background: rgba(255,255,255,0.1);
+  }
+  button {
+    padding: 14px 20px;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #fff;
+    width: 100%;
+  }
+  .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(102,126,234,0.4); }
+  .btn-secondary { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); }
+  .btn-secondary:hover { background: rgba(255,255,255,0.15); }
+  .btn-danger { background: linear-gradient(135deg, #ff4757, #c44569); }
+
+  .auth-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .auth-tab {
+    flex: 1;
+    padding: 12px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .auth-tab.active {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-color: transparent;
+  }
+
+  .friends-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+  }
+  .friend-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .friend-item:hover {
+    background: rgba(255,255,255,0.1);
+    transform: translateX(5px);
+  }
+  .friend-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 600;
+  }
+  .friend-info { flex: 1; }
+  .friend-name { font-weight: 600; font-size: 15px; }
+  .friend-status { font-size: 12px; color: #a0a0c0; margin-top: 2px; }
+  .friend-status.online { color: #2ed573; }
+
+  .call-ui {
+    text-align: center;
+    padding: 20px;
+  }
+  .avatar-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    margin-bottom: 20px;
+  }
+  .avatar {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    box-shadow: 0 10px 30px rgba(102,126,234,0.3);
+  }
+  .avatar.speaking {
+    animation: speaking 0.5s ease-in-out infinite alternate;
+  }
+  @keyframes speaking {
+    from { transform: scale(1); }
+    to { transform: scale(1.05); }
+  }
+  .avatar-label {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #a0a0c0;
+  }
+
+  .controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 20px;
+  }
+  .ctrl-btn {
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    padding: 0;
+    background: rgba(255,255,255,0.1);
+    width: 55px;
+  }
+  .ctrl-btn.active { background: linear-gradient(135deg, #667eea, #764ba2); }
+  .ctrl-btn.off { background: #ff4757; }
+  .ctrl-btn svg { width: 22px; height: 22px; }
+
+  .chat {
+    background: rgba(0,0,0,0.25);
+    border-radius: 16px;
+    padding: 15px;
+    max-height: 180px;
+    overflow-y: auto;
+    margin-top: 15px;
+  }
+  .msg {
+    padding: 8px 14px;
+    margin-bottom: 8px;
+    border-radius: 14px;
+    max-width: 80%;
+    font-size: 14px;
+    word-wrap: break-word;
+    animation: fadeIn 0.3s;
+  }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+  .msg.me { background: linear-gradient(135deg, #667eea, #764ba2); margin-left: auto; }
+  .msg.them { background: rgba(255,255,255,0.1); }
+  .msg.sys { background: rgba(255,193,7,0.15); color: #ffd93d; font-size: 12px; text-align: center; max-width: 100%; }
+  .chat-input { display: flex; gap: 10px; margin-top: 10px; }
+  .chat-input input { flex: 1; }
+
+  .hidden { display: none !important; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <span class="shield">🛡️</span>
+    <h1>SafeCall</h1>
+    <div class="user-info hidden" id="userInfo">
+      <span id="currentUsername"></span>
+      <button class="btn-secondary" id="logoutBtn" style="width:auto;padding:4px 12px;font-size:12px">Выйти</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- AUTH -->
+    <div id="authScreen">
+      <div class="auth-tabs">
+        <div class="auth-tab active" data-tab="login">🔑 Вход</div>
+        <div class="auth-tab" data-tab="register">✨ Регистрация</div>
+      </div>
+
+      <div id="loginForm">
+        <div class="section">
+          <div class="section-title">👤 Имя пользователя</div>
+          <input type="text" id="loginUsername" placeholder="Введи свой username..." />
+        </div>
+        <div class="section">
+          <div class="section-title">🔒 Пароль</div>
+          <input type="password" id="loginPassword" placeholder="Введи пароль..." />
+        </div>
+        <button class="btn-primary" id="loginBtn">🚀 Войти</button>
+      </div>
+
+      <div id="registerForm" class="hidden">
+        <div class="section">
+          <div class="section-title">👤 Придумай имя пользователя</div>
+          <input type="text" id="regUsername" placeholder="Уникальный username..." />
+        </div>
+        <div class="section">
+          <div class="section-title">🔒 Придумай пароль</div>
+          <input type="password" id="regPassword" placeholder="Сложный пароль..." />
+        </div>
+        <div class="section">
+          <div class="section-title">🔒 Повтори пароль</div>
+          <input type="password" id="regPassword2" placeholder="Ещё раз..." />
+        </div>
+        <button class="btn-primary" id="registerBtn">✨ Создать аккаунт</button>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div id="mainScreen" class="hidden">
+      <div class="section">
+        <div class="section-title">👥 Добавить друга</div>
+        <input type="text" id="addFriendInput" placeholder="Username друга..." />
+        <button class="btn-primary" id="addFriendBtn" style="margin-top:10px">➕ Добавить в друзья</button>
+      </div>
+
+      <div class="section">
+        <div class="section-title">📋 Мои друзья</div>
+        <div class="friends-list" id="friendsList"></div>
+      </div>
+    </div>
+
+    <!-- CALL -->
+    <div id="callScreen" class="hidden">
+      <div class="call-ui">
+        <div class="avatar-container">
+          <div>
+            <div class="avatar" id="localAvatar">🎤</div>
+            <div class="avatar-label">Ты</div>
+          </div>
+          <div>
+            <div class="avatar" id="remoteAvatar">👤</div>
+            <div class="avatar-label" id="remoteName">Друг</div>
+          </div>
+        </div>
+
+        <div class="controls">
+          <button class="ctrl-btn active" id="micBtn" title="Микрофон">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+          </button>
+          <button class="ctrl-btn" id="noiseBtn" title="Шумоподавление">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v18M8 7v10M4 10v4M16 7v10M20 10v4" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+          </button>
+          <button class="ctrl-btn" id="hangupBtn" title="Завершить">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28-.79-.73-1.68-1.36-2.66-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+          </button>
+        </div>
+
+        <div class="chat" id="chatBox"></div>
+        <div class="chat-input">
+          <input type="text" id="chatInput" placeholder="Напиши сообщение..." />
+          <button class="btn-primary" id="sendMsg" style="width:auto;padding:12px 20px">📤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== КРИПТОГРАФИЯ ==========
+async function hashPassword(password, salt) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: enc.encode(salt), iterations: 100000, hash: 'SHA-256' },
+    keyMaterial,
+    256
+  );
+  return Array.from(new Uint8Array(bits)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function deriveKey(password, salt) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt: enc.encode(salt), iterations: 100000, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+async function encryptMsg(key, text) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const enc = new TextEncoder();
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(text));
+  const buf = new Uint8Array(iv.length + ct.byteLength);
+  buf.set(iv, 0); buf.set(new Uint8Array(ct), iv.length);
+  return btoa(String.fromCharCode(...buf));
+}
+
+async function decryptMsg(key, b64) {
+  const bin = atob(b64);
+  const buf = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+  const iv = buf.slice(0, 12);
+  const ct = buf.slice(12);
+  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+  return new TextDecoder().decode(pt);
+}
+
+// ========== ХРАНИЛИЩЕ ==========
+const DB = {
+  getUsers: () => JSON.parse(localStorage.getItem('safecall_users') || '{}'),
+  saveUser: (username, data) => {
+    const users = DB.getUsers();
+    users[username] = data;
+    localStorage.setItem('safecall_users', JSON.stringify(users));
+  },
+  getCurrentUser: () => JSON.parse(localStorage.getItem('safecall_current') || 'null'),
+  setCurrentUser: (username) => localStorage.setItem('safecall_current', JSON.stringify(username)),
+  clearCurrentUser: () => localStorage.removeItem('safecall_current')
+};
+
+// ========== UI ==========
+let currentUser = null;
+let peer = null;
+let currentCall = null;
+let localStream = null;
+let cryptoKey = null;
+let dataConn = null;
+
+document.querySelectorAll('.auth-tab').forEach(tab => {
+  tab.onclick = () => {
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const isLogin = tab.dataset.tab === 'login';
+    document.getElementById('loginForm').classList.toggle('hidden', !isLogin);
+    document.getElementById('registerForm').classList.toggle('hidden', isLogin);
+  };
+});
+
+// ========== РЕГИСТРАЦИЯ ==========
+document.getElementById('registerBtn').onclick = async () => {
+  const username = document.getElementById('regUsername').value.trim().toLowerCase();
+  const password = document.getElementById('regPassword').value;
+  const password2 = document.getElementById('regPassword2').value;
+
+  if (!username || !password) return alert('Заполни все поля!');
+  if (username.length < 3) return alert('Username минимум 3 символа!');
+  if (password.length < 6) return alert('Пароль минимум 6 символов!');
+  if (password !== password2) return alert('Пароли не совпадают!');
+
+  const users = DB.getUsers();
+  if (users[username]) return alert('Такой username уже занят!');
+
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const passwordHash = await hashPassword(password, Array.from(salt).join(','));
+
+  DB.saveUser(username, {
+    salt: Array.from(salt),
+    passwordHash,
+    friends: [],
+    createdAt: Date.now()
+  });
+
+  alert('✅ Аккаунт создан! Теперь войди.');
+  document.querySelector('.auth-tab[data-tab="login"]').click();
+};
+
+// ========== ВХОД ==========
+document.getElementById('loginBtn').onclick = async () => {
+  const username = document.getElementById('loginUsername').value.trim().toLowerCase();
+  const password = document.getElementById('loginPassword').value;
+
+  const users = DB.getUsers();
+  const user = users[username];
+  if (!user) return alert('Пользователь не найден!');
+
+  const passwordHash = await hashPassword(password, user.salt.join(','));
+  if (passwordHash !== user.passwordHash) return alert('Неверный пароль!');
+
+  currentUser = username;
+  DB.setCurrentUser(username);
+  await initPeer();
+  showMainScreen();
+};
+
+// ========== ВЫХОД ==========
+document.getElementById('logoutBtn').onclick = () => {
+  if (peer) peer.destroy();
+  DB.clearCurrentUser();
+  location.reload();
+};
+
+// ========== PEERJS ==========
+async function initPeer() {
+  const user = DB.getUsers()[currentUser];
+  const peerId = await hashPassword(currentUser + user.passwordHash, 'peer-id');
+  
+  peer = new Peer('safecall-' + peerId.substring(0, 16), {
+    debug: 0
+  });
+
+  peer.on('open', id => {
+    console.log('✅ Подключено к signaling server:', id);
+  });
+
+  peer.on('call', async call => {
+    const callerId = call.peer.replace('safecall-', '');
+    const caller = await findUserByPeerId(callerId);
+    if (!caller) return;
+
+    localStream = await getMedia();
+    if (!localStream) return;
+
+    call.answer(localStream);
+    currentCall = call;
+    setupCall(call, caller);
+  });
+
+  peer.on('connection', conn => {
+    const senderId = conn.peer.replace('safecall-', '');
+    findUserByPeerId(senderId).then(sender => {
+      if (sender) setupDataConn(conn, sender);
+    });
+  });
+}
+
+async function findUserByPeerId(peerId) {
+  const users = DB.getUsers();
+  for (const [username, user] of Object.entries(users)) {
+    const id = await hashPassword(username + user.passwordHash, 'peer-id');
+    if (id.substring(0, 16) === peerId) return username;
+  }
+  return null;
+}
+
+async function getPeerId(username) {
+  const users = DB.getUsers();
+  const user = users[username];
+  if (!user) return null;
+  const id = await hashPassword(username + user.passwordHash, 'peer-id');
+  return 'safecall-' + id.substring(0, 16);
+}
+
+// ========== ГЛАВНЫЙ ЭКРАН ==========
+function showMainScreen() {
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('mainScreen').classList.remove('hidden');
+  document.getElementById('userInfo').classList.remove('hidden');
+  document.getElementById('currentUsername').textContent = '👤 ' + currentUser;
+  renderFriends();
+}
+
+function renderFriends() {
+  const users = DB.getUsers();
+  const user = users[currentUser];
+  const list = document.getElementById('friendsList');
+  list.innerHTML = '';
+
+  if (user.friends.length === 0) {
+    list.innerHTML = '<p style="text-align:center;color:#a0a0c0;padding:20px">Пока нет друзей. Добавь первого!</p>';
+    return;
+  }
+
+  user.friends.forEach(friend => {
+    const div = document.createElement('div');
+    div.className = 'friend-item';
+    div.innerHTML = `
+      <div class="friend-avatar">${friend[0].toUpperCase()}</div>
+      <div class="friend-info">
+        <div class="friend-name">${friend}</div>
+        <div class="friend-status online">● Онлайн</div>
+      </div>
+    `;
+    div.onclick = () => callFriend(friend);
+    list.appendChild(div);
+  });
+}
+
+// ========== ДОБАВИТЬ ДРУГА ==========
+document.getElementById('addFriendBtn').onclick = () => {
+  const friendUsername = document.getElementById('addFriendInput').value.trim().toLowerCase();
+  if (!friendUsername) return alert('Введи username!');
+  if (friendUsername === currentUser) return alert('Нельзя добавить себя!');
+
+  const users = DB.getUsers();
+  if (!users[friendUsername]) return alert('Пользователь не найден!');
+
+  const user = users[currentUser];
+  if (user.friends.includes(friendUsername)) return alert('Уже в друзьях!');
+
+  user.friends.push(friendUsername);
+  DB.saveUser(currentUser, user);
+  document.getElementById('addFriendInput').value = '';
+  renderFriends();
+};
+
+// ========== ЗВОНОК ==========
+async function callFriend(friendUsername) {
+  const friendPeerId = await getPeerId(friendUsername);
+  if (!friendPeerId) return alert('Друг не в сети!');
+
+  localStream = await getMedia();
+  if (!localStream) return;
+
+  const call = peer.call(friendPeerId, localStream);
+  currentCall = call;
+  setupCall(call, friendUsername);
+}
+
+async function getMedia() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      }
+    });
+    return stream;
+  } catch (e) {
+    alert('Не удалось получить доступ к микрофону!');
+    return null;
+  }
+}
+
+async function setupCall(call, friendUsername) {
+  document.getElementById('mainScreen').classList.add('hidden');
+  document.getElementById('callScreen').classList.remove('hidden');
+  document.getElementById('remoteName').textContent = friendUsername;
+
+  call.on('stream', remoteStream => {
+    const audio = new Audio();
+    audio.srcObject = remoteStream;
+    audio.play();
+    document.getElementById('remoteAvatar').classList.add('speaking');
+  });
+
+  call.on('close', () => {
+    hangup();
+  });
+
+  // Создаём зашифрованный чат
+  const users = DB.getUsers();
+  const combinedPass = [currentUser, friendUsername].sort().join('-') + users[currentUser].passwordHash;
+  cryptoKey = await deriveKey(combinedPass, 'safecall-call-v1');
+
+  const friendPeerId = await getPeerId(friendUsername);
+  dataConn = peer.connect(friendPeerId, { reliable: true });
+  setupDataConn(dataConn, friendUsername);
+}
+
+function setupDataConn(conn, friendUsername) {
+  dataConn = conn;
+  conn.on('open', () => {
+    addMsg('🔒 Зашифрованный чат активен', 'sys');
+  });
+  conn.on('data', async data => {
+    try {
+      const text = await decryptMsg(cryptoKey, data);
+      addMsg(text, 'them');
+    } catch (e) {
+      console.error('Ошибка расшифровки:', e);
+    }
+  });
+  conn.on('close', () => {
+    addMsg('💬 Чат закрыт', 'sys');
+  });
+}
+
+// ========== УПРАВЛЕНИЕ ЗВОНКОМ ==========
+document.getElementById('micBtn').onclick = function() {
+  const track = localStream.getAudioTracks()[0];
+  track.enabled = !track.enabled;
+  this.classList.toggle('off', !track.enabled);
+  this.classList.toggle('active', track.enabled);
+};
+
+document.getElementById('hangupBtn').onclick = () => {
+  hangup();
+};
+
+function hangup() {
+  if (currentCall) currentCall.close();
+  if (dataConn) dataConn.close();
+  if (localStream) localStream.getTracks().forEach(t => t.stop());
+  currentCall = null;
+  dataConn = null;
+  localStream = null;
+  cryptoKey = null;
+  document.getElementById('callScreen').classList.add('hidden');
+  document.getElementById('mainScreen').classList.remove('hidden');
+  document.getElementById('remoteAvatar').classList.remove('speaking');
+}
+
+// ========== ЧАТ ==========
+function addMsg(text, type) {
+  const box = document.getElementById('chatBox');
+  const div = document.createElement('div');
+  div.className = 'msg ' + type;
+  div.textContent = text;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+document.getElementById('sendMsg').onclick = async () => {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text || !dataConn || dataConn.readyState !== 'open') return;
+
+  const encrypted = await encryptMsg(cryptoKey, text);
+  dataConn.send(encrypted);
+  addMsg(text, 'me');
+  input.value = '';
+};
+
+document.getElementById('chatInput').addEventListener('keypress', e => {
+  if (e.key === 'Enter') document.getElementById('sendMsg').click();
+});
+
+// ========== АВТОВХОД ==========
+window.onload = async () => {
+  const savedUser = DB.getCurrentUser();
+  if (savedUser) {
+    currentUser = savedUser;
+    await initPeer();
+    showMainScreen();
+  }
+};
+</script>
+</body>
+</html>
