@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>🔒 SafeCall — защищённое общение</title>
+<title> SafeCall — защищённое общение</title> 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <style>
@@ -24,7 +24,7 @@
     min-height:100vh; 
     background:var(--bg); 
     color:var(--txt); 
-    display:flex; 
+    display:flex;  
     align-items:center; 
     justify-content:center; 
     padding:12px; 
@@ -53,13 +53,13 @@
     flex-direction:column;
     align-items:center;
     padding:20px 0;
-    flex-shrink:0;
+    flex-shrink:0; 
   }
   .sidebar .logo { 
     width:40px; 
     height:40px; 
     border-radius:10px; 
-    background:var(--accent); 
+    background:var(--accent);  
     display:flex; 
     align-items:center; 
     justify-content:center; 
@@ -195,6 +195,11 @@
   .btn-primary:hover { 
     background:var(--accent-hover); 
   }
+  .btn-secondary {
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    color:var(--txt);
+  }
   
   .auth-tabs { 
     display:flex; 
@@ -318,7 +323,7 @@
   }
   @keyframes ringPulse { 0%{transform:scale(1);opacity:1} 100%{transform:scale(1.35);opacity:0} }
   .avatar-label { margin-top:8px; font-size:12px; color:var(--muted); }
-  #callStatus { font-size:11px; color:var(--muted); margin-bottom:12px; min-height:16px; }
+  #callStatus { font-size:11px; color:var(--muted); margin-bottom:12px; min-height:16px; transition: color 0.3s; }
   
   .controls { display:flex; gap:12px; justify-content:center; margin-top:4px; }
   .ctrl-btn { 
@@ -364,6 +369,7 @@
     line-height:1.4;
     word-wrap:break-word; 
     animation:fadeIn .25s ease; 
+    position: relative;
   }
   @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
   .msg.me { 
@@ -385,9 +391,26 @@
     max-width:100%; 
     border:1px dashed var(--line); 
   }
-  .chat-input { display:flex; gap:8px; margin-top:8px; }
+  .chat-input { display:flex; gap:8px; margin-top:8px; align-items: center; }
   .chat-input input { flex:1; }
   .chat-input button { width:auto; padding:10px 16px; }
+  
+  #recordVoiceBtn { 
+    width: 44px !important; 
+    height: 44px; 
+    padding: 0 !important; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  #recordVoiceBtn.recording { 
+    background: var(--danger) !important; 
+    color: #fff !important; 
+    animation: pulse 1s infinite; 
+  }
+  @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
   
   #incomingOverlay { 
     position:fixed; 
@@ -431,19 +454,39 @@
     justify-content:center; 
     padding:20px; 
   }
+  
+  /* ===== РАСТЯНУТОЕ ОКНО НАСТРОЕК ===== */
   .settings-panel { 
-    width:100%; 
-    max-width:500px; 
-    max-height:90vh; 
+    width: 100%;
+    max-width: 800px;
+    max-height: 90vh; 
     height: auto;
     min-height: 600px;
-    overflow-y:auto; 
-    background:var(--surface); 
-    border:1px solid var(--line); 
-    border-radius:24px; 
-    padding:32px; 
+    overflow-y: auto; 
+    background: var(--surface); 
+    border: 1px solid var(--line); 
+    border-radius: 24px; 
+    padding: 40px;
     box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
   }
+  
+  /* Двухколоночная сетка для широких экранов */
+  @media (min-width: 800px) {
+    .settings-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-content: start;
+    }
+    .settings-head {
+      grid-column: 1 / -1;
+      margin-bottom: 16px;
+    }
+    .set-group {
+      margin-bottom: 0;
+    }
+  }
+
   .settings-head { 
     display:flex; 
     align-items:center; 
@@ -483,6 +526,8 @@
   }
   select option { background:var(--surface); }
   input[type=range] { width:100%; accent-color:var(--accent); padding:0; border:none; background:transparent; height:24px; }
+  
+  /* ===== ИСПРАВЛЕННЫЕ КРУЖОЧКИ-ПЕРЕКЛЮЧАТЕЛИ ===== */
   .switch-row { 
     display:flex; 
     justify-content:space-between; 
@@ -495,28 +540,41 @@
   }
   .switch-row:last-child { border-bottom: none; }
   .switch-row input { display:none; }
-  .switch-row i { 
-    width:48px; 
-    height:26px; 
-    background:var(--line); 
-    border-radius:999px; 
-    position:relative; 
-    transition:.2s; 
-    flex-shrink:0; 
+  
+  .switch-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    border: 2px solid var(--danger);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    cursor: pointer;
+    color: var(--danger);
   }
-  .switch-row i::after { 
-    content:''; 
-    position:absolute; 
-    top:3px; 
-    left:3px; 
-    width:20px; 
-    height:20px; 
-    border-radius:50%; 
-    background:#fff; 
-    transition:.2s; 
+  
+  /* Когда включено: кружок зелёный с чёрной галочкой */
+  .switch-row:has(input:checked) .switch-circle {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
   }
-  .switch-row input:checked + i { background:var(--accent); }
-  .switch-row input:checked + i::after { left:25px; }
+  
+  .switch-row span {
+    flex: 1;
+    transition: color 0.3s ease;
+    color: var(--danger); /* По умолчанию красный */
+  }
+  
+  /* Когда включено: текст зелёный */
+  .switch-row:has(input:checked) span {
+    color: var(--accent);
+  }
   
   .hidden { display:none !important; }
   ::-webkit-scrollbar { width:6px; } 
@@ -525,7 +583,7 @@
   @media (max-width: 1024px) {
     .app { max-width: 95%; }
     .sidebar { width: 60px; }
-    .settings-panel { max-width: 450px; min-height: 550px; }
+    .settings-panel { max-width: 700px; min-height: 550px; }
   }
   
   @media (max-width: 768px) {
@@ -566,6 +624,7 @@
       border-radius: 20px 20px 0 0;
       margin: 0;
       padding: 24px 20px;
+      display: block;
     }
     .avatar { width: 70px; height: 70px; font-size: 28px; }
     .ctrl-btn { width: 46px; height: 46px; }
@@ -611,9 +670,9 @@
     .app { max-width: 1000px; }
     .sidebar { width: 80px; }
     .settings-panel { 
-      max-width: 550px; 
+      max-width: 900px;
       min-height: 650px;
-      padding: 40px;
+      padding: 48px;
     }
   }
   
@@ -642,7 +701,7 @@
   <div class="main-wrapper">
     <div class="header">
       <h1>SafeCall</h1>
-      <span class="ver-badge">v12</span>
+      <span class="ver-badge">v13</span>
       <div class="user-info hidden" id="userInfo">
         <span id="currentUsername"></span>
         <button class="icon-btn" id="settingsBtn" title="Настройки">⚙️ Настройки</button>
@@ -736,6 +795,7 @@
           </div>
           <div class="chat" id="chatBox"></div>
           <div class="chat-input">
+            <button class="action-btn btn-secondary" id="recordVoiceBtn" title="Зажми для записи голоса">🎤</button>
             <input type="text" id="chatInput" placeholder="Напиши сообщение..." />
             <button class="action-btn btn-primary" id="sendMsg" style="width:auto">📤</button>
           </div>
@@ -777,24 +837,18 @@
       <div class="set-title">🔇 Обработка звука</div>
       <label class="switch-row">
         <span>Шумоподавление</span>
-        <label class="toggle">
-          <input type="checkbox" id="setNoise" checked>
-          <i></i>
-        </label>
+        <input type="checkbox" id="setNoise" checked>
+        <div class="switch-circle">✓</div>
       </label>
       <label class="switch-row">
         <span>Эхоподавление</span>
-        <label class="toggle">
-          <input type="checkbox" id="setEcho" checked>
-          <i></i>
-        </label>
+        <input type="checkbox" id="setEcho" checked>
+        <div class="switch-circle">✓</div>
       </label>
       <label class="switch-row">
         <span>Авто-громкость микрофона</span>
-        <label class="toggle">
-          <input type="checkbox" id="setAgc">
-          <i></i>
-        </label>
+        <input type="checkbox" id="setAgc">
+        <div class="switch-circle">✕</div>
       </label>
     </div>
 
@@ -803,17 +857,13 @@
       <label class="set-label" style="margin-bottom:12px; display:block; line-height:1.5">Чтобы не слышать себя при тесте на одном ПК/телефоне</label>
       <label class="switch-row">
         <span>Включить режим</span>
-        <label class="toggle">
-          <input type="checkbox" id="setSameDev">
-          <i></i>
-        </label>
+        <input type="checkbox" id="setSameDev">
+        <div class="switch-circle">✕</div>
       </label>
       <label class="switch-row">
         <span>Звук новых сообщений</span>
-        <label class="toggle">
-          <input type="checkbox" id="setMsgSound" checked>
-          <i></i>
-        </label>
+        <input type="checkbox" id="setMsgSound" checked>
+        <div class="switch-circle">✓</div>
       </label>
     </div>
 
@@ -934,6 +984,7 @@ let chatId = null, chatKey = null, chatUnsub = null, msgUnsub = null;
 let seenMsgs = new Set(), pendingEnc = [], msgQueue = [];
 let speakerOn = true, sameDevNotified = false;
 let audioContext = null, analyser = null, speakingTimeout = null;
+let typingTimeout = null;
 
 function setCallStatus(text, ok) {
   const el = document.getElementById('callStatus');
@@ -969,7 +1020,7 @@ function enableSameDeviceMode() {
   const btn = document.getElementById('speakerBtn');
   btn.classList.remove('active'); 
   btn.classList.add('off');
-  addMsg('⚠️ Обнаружено одно устройство — динамик приглушён. Включи вручную.', 'sys');
+  addMsg('⚠️ Обнаружено одно устройство — динамик приглушён.', 'sys');
 }
 
 function applySpeakerUI() {
@@ -1006,6 +1057,51 @@ function setupVoiceDetection(stream) {
     console.error('Voice detection error:', e);
   }
 }
+
+// ===== Форматирование "Был в сети" =====
+function formatLastSeen(lastSeen) {
+  if (!lastSeen) return '○ Не в сети';
+  const diff = Date.now() - lastSeen;
+  if (diff < 60000) return '○ Был только что';
+  if (diff < 3600000) return `○ Был ${Math.floor(diff/60000)} мин назад`;
+  if (diff < 86400000) return `○ Был ${Math.floor(diff/3600000)} ч назад`;
+  return `○ Был ${new Date(lastSeen).toLocaleDateString()}`;
+}
+
+// ===== ОБНОВЛЕНИЕ КРУЖОЧКОВ-ПЕРЕКЛЮЧАТЕЛЕЙ =====
+function updateSwitchCircles() {
+  const switches = ['setNoise', 'setEcho', 'setAgc', 'setSameDev', 'setMsgSound'];
+  
+  switches.forEach(id => {
+    const checkbox = document.getElementById(id);
+    const circle = checkbox.nextElementSibling;
+    
+    if (checkbox && circle) {
+      if (checkbox.checked) {
+        circle.textContent = '✓';
+      } else {
+        circle.textContent = '✕';
+      }
+    }
+  });
+}
+
+// Добавляем обработчики на все чекбоксы
+['setNoise', 'setEcho', 'setAgc', 'setSameDev', 'setMsgSound'].forEach(id => {
+  const checkbox = document.getElementById(id);
+  if (checkbox) {
+    checkbox.addEventListener('change', function() {
+      updateSwitchCircles();
+      // Обновляем настройки
+      if (id === 'setNoise') { settings.noiseSuppression = this.checked; }
+      if (id === 'setEcho') { settings.echoCancellation = this.checked; }
+      if (id === 'setAgc') { settings.autoGainControl = this.checked; }
+      if (id === 'setSameDev') { settings.sameDeviceMode = this.checked; }
+      if (id === 'setMsgSound') { settings.msgSound = this.checked; }
+      saveSettings();
+    });
+  }
+});
 
 document.querySelectorAll('.auth-tab').forEach(tab => {
   tab.onclick = () => {
@@ -1311,7 +1407,23 @@ function hangup(notify) {
 
 document.getElementById('hangupBtn').onclick = () => hangup(true);
 
-// ========== ИСПРАВЛЕННЫЙ ЧАТ (без orderBy) ==========
+// ========== УЛУЧШЕННЫЙ ЧАТ ==========
+function addMsg(content, type, msgId = null, isVoice = false) {
+  const box = document.getElementById('chatBox');
+  const div = document.createElement('div');
+  div.className = 'msg ' + type;
+  if (msgId) div.setAttribute('data-id', msgId);
+  
+  if (isVoice) {
+    div.innerHTML = `<audio controls src="${content}" style="max-width:100%; height: 32px; border-radius: 8px; outline: none;"></audio>`;
+  } else {
+    div.textContent = content;
+  }
+  
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
 function initChat(friend) {
   if (chatId) {
     stopChat();
@@ -1322,76 +1434,81 @@ function initChat(friend) {
   pendingEnc = [];
   msgQueue = [];
 
-  console.log('🔑 Инициализация чата с:', friend);
-  console.log('🔑 Мой pubKey:', myPubB64);
-
   const derive = async friendPub => {
     if (chatKey || !myPriv || !friendPub) return;
-    console.log('🔑 Публичный ключ друга:', friendPub);
     try {
       const other = await crypto.subtle.importKey('raw', unb64(friendPub), { name:'ECDH', namedCurve:'P-256' }, false, []);
       chatKey = await crypto.subtle.deriveKey({ name:'ECDH', public: other }, myPriv, { name:'AES-GCM', length:256 }, false, ['encrypt','decrypt']);
-      console.log('✅ Ключ чата получен успешно');
       addMsg('🔒 Зашифрованный чат активен', 'sys');
       flushPending();
     } catch(e) { 
       console.error('❌ Ошибка получения ключа:', e);
-      addMsg('⚠️ Ошибка шифрования: ' + e.message, 'sys');
+      addMsg('⚠️ Ошибка шифрования', 'sys');
     }
   };
 
-  // Проверяем pubKey друга
-  db.collection('users').doc(friend).get().then(snap => {
-    if (snap.exists) {
-      const data = snap.data();
-      console.log('📋 Данные друга:', data);
-      if (!data.pubKey) {
-        console.warn('⚠️ У друга нет pubKey! Попроси его выйти и войти заново.');
-        addMsg('⚠️ У друга не настроено шифрование. Попроси его перезайти.', 'sys');
-      } else {
-        derive(data.pubKey);
+  chatUnsub = db.collection('users').doc(friend).onSnapshot(snap => {
+    const data = snap.data();
+    if (data) {
+      if (!chatKey && data.pubKey) derive(data.pubKey);
+      
+      if (data.typingIn === chatId) {
+        document.getElementById('callStatus').textContent = '✍️ Печатает...';
+        document.getElementById('callStatus').style.color = 'var(--accent)';
+      } else if (currentCall) {
+         const voice = pc && (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed');
+         if (voice && chatKey) {
+            setCallStatus('✅ Голос и чат активны (E2E)', true);
+         } else if (chatKey) {
+            setCallStatus('✅ Чат активен · голос подключается...', true);
+         } else {
+            setCallStatus('⏳ Подключение...', false);
+         }
       }
-    } else {
-      console.error('❌ Пользователь не найден:', friend);
     }
   });
 
-  chatUnsub = db.collection('users').doc(friend).onSnapshot(snap => {
-    const pk = (snap.data() || {}).pubKey;
-    if (pk && !chatKey) derive(pk);
-  });
-
   msgUnsub = db.collection('messages').where('chat', '==', chatId).onSnapshot(snap => {
-    console.log('📨 Получено сообщений:', snap.docs.length);
     snap.docChanges().forEach(ch => {
-      if (ch.type === 'removed') return;
-      const id = ch.doc.id;
-      if (seenMsgs.has(id)) return;
-      seenMsgs.add(id);
-      const m = ch.doc.data();
-      if (!m) return;
-      if (m.from === currentUser) {
-        console.log('📤 Своё сообщение');
+      if (ch.type === 'removed') {
+        const el = document.querySelector(`.msg[data-id="${ch.doc.id}"]`);
+        if (el) el.remove();
         return;
       }
-      if (chatKey) {
-        decryptMsg(chatKey, m.data).then(t => { 
-          console.log('📥 Расшифровано:', t);
-          addMsg(t, 'them'); 
-          beep(); 
-        }).catch(e => {
-          console.error('❌ decrypt fail:', e);
-          console.log('🔐 Зашифрованные данные:', m.data);
-          addMsg('⚠️ Не удалось расшифровать сообщение (возможно, старый ключ)', 'sys');
-        });
-      } else {
-        console.log('⏳ Сообщение в очереди (ждём ключ)');
-        pendingEnc.push({ id, data: m.data });
+      if (ch.type === 'added') {
+        const id = ch.doc.id;
+        if (seenMsgs.has(id)) return;
+        seenMsgs.add(id);
+        const m = ch.doc.data();
+        if (!m) return;
+        
+        if (m.isVoice) {
+          addMsg(m.data, m.from === currentUser ? 'me' : 'them', id, true);
+          if (m.from !== currentUser) beep();
+          return;
+        }
+
+        if (m.from === currentUser) {
+          addMsg(m.text, 'me', id);
+          return;
+        }
+        
+        if (chatKey) {
+          decryptMsg(chatKey, m.data).then(t => { 
+            addMsg(t, 'them', id); 
+            beep(); 
+          }).catch(e => {
+            console.error('❌ decrypt fail:', e);
+            addMsg('⚠️ Ошибка расшифровки', 'sys');
+          });
+        } else {
+          pendingEnc.push({ id, data: m.data });
+        }
       }
     });
   }, err => {
     console.error('❌ msg listen error:', err);
-    addMsg('⚠️ Ошибка подключения к чату: ' + err.message, 'sys');
+    addMsg('⚠️ Ошибка подключения к чату', 'sys');
   });
 }
 
@@ -1400,11 +1517,9 @@ async function flushPending() {
     const item = pendingEnc.shift();
     try { 
       const t = await decryptMsg(chatKey, item.data);
-      addMsg(t, 'them'); 
+      addMsg(t, 'them', item.id); 
       beep(); 
-    } catch(e) {
-      console.error('flush fail', e);
-    }
+    } catch(e) {}
   }
 }
 
@@ -1454,21 +1569,26 @@ async function renderFriends() {
   
   for (const friend of friends) {
     let online = false;
+    let lastSeen = null;
     try {
       const s = await db.collection('users').doc(friend).get();
       if (s.exists) { 
         const fd = s.data(); 
-        online = fd.online && (Date.now() - fd.lastSeen < 90000); 
+        online = fd.online && (Date.now() - fd.lastSeen < 90000);
+        lastSeen = fd.lastSeen;
       }
     } catch(e) {}
     
     const div = document.createElement('div');
     div.className = 'friend-item';
+    const statusText = online ? '● Онлайн' : formatLastSeen(lastSeen);
+    const statusClass = online ? 'online' : '';
+    
     div.innerHTML = `
       <div class="friend-avatar">${friend[0].toUpperCase()}</div>
       <div class="friend-info">
         <div class="friend-name">${friend}</div>
-        <div class="friend-status ${online ? 'online' : ''}">${online ? '● Онлайн' : '○ Не в сети'}</div>
+        <div class="friend-status ${statusClass}">${statusText}</div>
       </div>
       <button class="del-friend" data-f="${friend}" title="Удалить">✕</button>
     `;
@@ -1576,6 +1696,8 @@ function openSettings() {
   document.getElementById('setMsgSound').checked = settings.msgSound;
   
   document.getElementById('setFingerprint').textContent = '🔑 Отпечаток E2E-ключа: ' + (myPubB64 ? myPubB64.slice(0, 16) + '…' : '—') + '\n📱 Устройство: ' + DEVICE_ID.slice(0, 12) + '…';
+  
+  setTimeout(updateSwitchCircles, 100);
 }
 
 document.getElementById('settingsBtn').onclick = openSettings;
@@ -1613,47 +1735,14 @@ document.getElementById('setVolume').oninput = function() {
   applyRemoteAudioSettings();
 };
 
-document.getElementById('setNoise').onchange = function() { 
-  settings.noiseSuppression = this.checked; 
-  saveSettings(); 
-};
-
-document.getElementById('setEcho').onchange = function() { 
-  settings.echoCancellation = this.checked; 
-  saveSettings(); 
-};
-
-document.getElementById('setAgc').onchange = function() {
-  settings.autoGainControl = this.checked; 
-  saveSettings();
-};
-
-document.getElementById('setSameDev').onchange = function() {
-  settings.sameDeviceMode = this.checked; 
-  saveSettings();
-  if (this.checked) { 
-    sameDevNotified = false; 
-    enableSameDeviceMode(); 
-  } else { 
-    speakerOn = true; 
-    if (remoteAudio) remoteAudio.muted = false; 
-    applySpeakerUI(); 
-  }
-};
-
-document.getElementById('setMsgSound').onchange = function() { 
-  settings.msgSound = this.checked; 
-  saveSettings(); 
-};
-
-function addMsg(text, type) {
-  const box = document.getElementById('chatBox');
-  const div = document.createElement('div');
-  div.className = 'msg ' + type;
-  div.textContent = text;
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
-}
+document.getElementById('chatInput').addEventListener('input', () => {
+  if (!chatId) return;
+  db.collection('users').doc(currentUser).update({ typingIn: chatId }).catch(()=>{});
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(() => {
+    db.collection('users').doc(currentUser).update({ typingIn: firebase.firestore.FieldValue.delete() }).catch(()=>{});
+  }, 2000);
+});
 
 document.getElementById('sendMsg').onclick = async () => {
   const input = document.getElementById('chatInput');
@@ -1665,25 +1754,113 @@ document.getElementById('sendMsg').onclick = async () => {
   
   if (!chatKey || !chatId) { 
     msgQueue.push(text); 
-    console.log('⏳ Сообщение в очереди (ждём ключ)');
     return; 
   }
   
   try {
     const data = await encryptMsg(chatKey, text);
-    await db.collection('messages').add({ 
+    const ref = await db.collection('messages').add({ 
       chat: chatId, 
       from: currentUser, 
       data, 
       ts: Date.now(), 
-      v: 12 
+      v: 13 
     });
-    console.log('✅ Сообщение отправлено');
+    
+    const msgs = document.querySelectorAll('.msg.me:not([data-id])');
+    if (msgs.length > 0) {
+      const lastMsg = msgs[msgs.length - 1];
+      lastMsg.setAttribute('data-id', ref.id);
+      const delBtn = document.createElement('span');
+      delBtn.innerHTML = ' 🗑️';
+      delBtn.style.cursor = 'pointer';
+      delBtn.style.marginLeft = '8px';
+      delBtn.style.opacity = '0.7';
+      delBtn.title = 'Удалить';
+      delBtn.onclick = () => {
+        if(confirm('Удалить это сообщение?')) {
+          db.collection('messages').doc(ref.id).delete().catch(e => console.error(e));
+        }
+      };
+      lastMsg.appendChild(delBtn);
+    }
   } catch (e) { 
     console.error('send fail', e);
     alert('Ошибка отправки: ' + e.message);
   }
 };
+
+let mediaRecorder;
+let audioChunks = [];
+let isRecording = false;
+const recordBtn = document.getElementById('recordVoiceBtn');
+
+const startRecording = async () => {
+  if (isRecording || !chatId) return;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+    mediaRecorder.ondataavailable = e => {
+      if (e.data.size > 0) audioChunks.push(e.data);
+    };
+    mediaRecorder.onstop = async () => {
+      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      const reader = new FileReader();
+      reader.readAsDataURL(audioBlob);
+      reader.onloadend = async () => {
+        const base64data = reader.result;
+        if (chatId) {
+          addMsg(base64data, 'me', null, true);
+          
+          const ref = await db.collection('messages').add({
+            chat: chatId,
+            from: currentUser,
+            data: base64data,
+            isVoice: true,
+            ts: Date.now()
+          });
+          
+          const msgs = document.querySelectorAll('.msg.me:not([data-id])');
+          if (msgs.length > 0) {
+            const lastMsg = msgs[msgs.length - 1];
+            lastMsg.setAttribute('data-id', ref.id);
+            const delBtn = document.createElement('span');
+            delBtn.innerHTML = ' 🗑️';
+            delBtn.style.cursor = 'pointer';
+            delBtn.style.marginLeft = '8px';
+            delBtn.onclick = () => {
+              if(confirm('Удалить это сообщение?')) {
+                db.collection('messages').doc(ref.id).delete().catch(e => console.error(e));
+              }
+            };
+            lastMsg.appendChild(delBtn);
+          }
+        }
+        stream.getTracks().forEach(t => t.stop());
+      };
+    };
+    mediaRecorder.start();
+    isRecording = true;
+    recordBtn.classList.add('recording');
+  } catch(e) {
+    alert('Нет доступа к микрофону для записи голоса');
+  }
+};
+
+const stopRecording = () => {
+  if (isRecording && mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+    isRecording = false;
+    recordBtn.classList.remove('recording');
+  }
+};
+
+recordBtn.addEventListener('mousedown', startRecording);
+recordBtn.addEventListener('mouseup', stopRecording);
+recordBtn.addEventListener('mouseleave', stopRecording);
+recordBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startRecording(); });
+recordBtn.addEventListener('touchend', (e) => { e.preventDefault(); stopRecording(); });
 
 setInterval(async () => {
   if (chatKey && chatId && msgQueue.length) {
@@ -1692,17 +1869,29 @@ setInterval(async () => {
     for (const t of q) {
       try {
         const data = await encryptMsg(chatKey, t);
-        await db.collection('messages').add({ 
+        const ref = await db.collection('messages').add({ 
           chat: chatId, 
           from: currentUser, 
           data, 
           ts: Date.now(), 
-          v: 12 
+          v: 13 
         });
-        console.log('✅ Сообщение из очереди отправлено');
-      } catch(e) {
-        console.error('Queue send fail:', e);
-      }
+        const msgs = document.querySelectorAll('.msg.me:not([data-id])');
+        if (msgs.length > 0) {
+          const lastMsg = msgs[msgs.length - 1];
+          lastMsg.setAttribute('data-id', ref.id);
+          const delBtn = document.createElement('span');
+          delBtn.innerHTML = ' 🗑️';
+          delBtn.style.cursor = 'pointer';
+          delBtn.style.marginLeft = '8px';
+          delBtn.onclick = () => {
+            if(confirm('Удалить это сообщение?')) {
+              db.collection('messages').doc(ref.id).delete().catch(e => console.error(e));
+            }
+          };
+          lastMsg.appendChild(delBtn);
+        }
+      } catch(e) {}
     }
   }
 }, 1500);
