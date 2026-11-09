@@ -8,305 +8,1035 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   * { box-sizing: border-box; margin: 0; }
+  [hidden] { display: none !important; }
   body { font-family: system-ui, sans-serif; background: #1a1b26; color: #e2e2e2;
-         height: 100vh; display: flex; flex-direction: column; }
-  header { padding: 12px 16px; background: #24283b; display: flex; gap: 12px; align-items: center; }
+    height: 100vh; height: 100dvh; display: flex; flex-direction: column; }
+  button, input { font: inherit; }
+  button { padding: 10px 16px; border: none; border-radius: 8px; background: #7aa2f7;
+    color: #1a1b26; font-weight: 600; cursor: pointer; }
+  button:disabled { opacity: .4; cursor: default; }
+  input { padding: 10px; border-radius: 8px; border: 1px solid #3d4a6b; background: #24283b;
+    color: #fff; min-width: 0; }
+  input:focus-visible, button:focus-visible { outline: 2px solid #73daca; outline-offset: 2px; }
+  .panel { margin: auto; padding: 24px; width: min(100%, 430px); text-align: center; overflow-y: auto; }
+  .panel h1, .panel h2 { margin-bottom: 16px; }
+  .panel p { margin-bottom: 12px; line-height: 1.5; }
+  .panel form { display: grid; gap: 10px; }
+  .panel input { width: 100%; }
+  .link-button { color: #7aa2f7; background: none; font-size: 13px; font-weight: 400; }
+  .err { color: #f7768e; min-height: 20px; font-size: 13px; margin-top: 8px; overflow-wrap: anywhere; }
+  .info { color: #73daca; font-size: 13px; margin-top: 8px; line-height: 1.5; }
+  .danger { background: #f7768e; }
+  .secondary { background: #3d4a6b; color: #e2e2e2; }
+  #app { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  header { padding: 10px 16px; background: #24283b; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   header h1 { font-size: 18px; }
-  #myId { font-size: 13px; color: #7aa2f7; cursor: pointer; }
-  .panel { margin: auto; text-align: center; }
-  .panel input { display: block; margin: 8px auto; padding: 10px; border-radius: 8px;
-                 border: 1px solid #3d4a6b; background: #24283b; color: #fff; font-size: 15px; width: 260px; }
-  button, .btn { padding: 10px 18px; border: none; border-radius: 8px; margin: 4px;
-        background: #7aa2f7; color: #1a1b26; font-weight: bold; cursor: pointer; font-size: 14px; }
-  .btn:disabled { opacity: .4; }
-  .err { color: #f7768e; min-height: 20px; font-size: 13px; margin-top: 8px; }
-  #app { display: none; flex-direction: column; flex: 1; min-height: 0; }
-  #connectBar { display: flex; flex-wrap: wrap; padding: 8px 12px; background: #24283b; gap: 8px; align-items: center; }
-  #connectBar input { padding: 8px; border-radius: 6px; border: 1px solid #3d4a6b; background: #1a1b26; color: #fff; }
-  #peerInput { flex: 2; min-width: 140px; }
-  #encKey { flex: 1; min-width: 120px; border-color: #73daca !important; }
-  #chat { flex: 1; overflow-y: auto; padding: 12px; min-height: 0; }
-  .msg { max-width: 70%; padding: 8px 12px; border-radius: 12px; margin: 4px 0; background: #343a55; }
+  #myId { font-size: 13px; overflow-wrap: anywhere; }
+  #logout { margin-left: auto; }
+  #connectBar { display: flex; flex-wrap: wrap; padding: 10px 12px; background: #24283b; gap: 8px; align-items: center; }
+  #peerInput { flex: 2; min-width: 150px; }
+  #encKey { flex: 2; min-width: 180px; border-color: #73daca; }
+  #encStatus { width: 100%; font-size: 12px; color: #a9b1d6; }
+  #statusBar { padding: 4px 12px; display: flex; gap: 8px; align-items: center; }
+  #appStatus, #callStatus { font-size: 13px; color: #a9b1d6; overflow-wrap: anywhere; }
+  #callStatus { padding: 4px 12px; }
+  #chat { flex: 1; overflow-y: auto; padding: 12px; min-height: 80px; }
+  .msg { max-width: 80%; padding: 8px 12px; border-radius: 12px; margin: 5px 0; background: #343a55;
+    overflow-wrap: anywhere; white-space: pre-wrap; }
   .out { background: #2f6f6f; margin-left: auto; }
-  .meta { font-size: 11px; opacity: .6; background: none; text-align: center; max-width: none; padding: 2px; }
-  #inputBar { display: flex; padding: 8px; gap: 8px; background: #24283b; }
-  #msgInput { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #3d4a6b; background: #1a1b26; color: #fff; }
-  #videos { display: none; gap: 8px; padding: 8px; }
-  video { width: 200px; border-radius: 8px; background: #000; }
-  #controls { display: none; padding: 8px; gap: 8px; justify-content: center; background: #24283b; }
+  .meta { font-size: 12px; color: #a9b1d6; background: none; text-align: center; max-width: none; padding: 3px; }
+  #messageForm { display: flex; padding: 8px; gap: 8px; background: #24283b; }
+  #msgInput { flex: 1; }
+  #incomingCall { padding: 12px; background: #343a55; text-align: center; }
+  #incomingCaller { margin-bottom: 10px; }
+  #incomingCall button { margin: 0 4px; }
+  #videos { display: flex; justify-content: center; gap: 8px; padding: 8px; }
+  video { width: min(40%, 300px); max-height: 28vh; border-radius: 8px; background: #000; }
+  #controls { display: flex; padding: 6px; gap: 8px; justify-content: center; background: #24283b; }
+  @media (max-width: 520px) {
+    header { padding: 8px; gap: 4px; }
+    header h1 { width: 100%; }
+    #connectBar { padding: 8px; }
+    #connectBar input { flex-basis: 100%; }
+    button { padding: 9px 12px; font-size: 14px; }
+    .msg { max-width: 92%; }
+  }
 </style>
 </head>
 <body>
+<section id="auth" class="panel">
+  <h1>💬 Мессенджер</h1>
+  <form id="authForm" novalidate>
+    <input id="regNick" aria-label="Ник" placeholder="Ник: от 3 до 32 символов" autocomplete="nickname" maxlength="64" hidden>
+    <input id="regEmail" type="email" aria-label="E-mail" placeholder="E-mail" autocomplete="email" autocapitalize="off" required>
+    <input id="regPass" type="password" aria-label="Пароль" placeholder="Пароль" autocomplete="current-password" required>
+    <button id="loginBtn" type="submit">Войти</button>
+    <button id="regBtn" type="submit" hidden>Создать аккаунт</button>
+  </form>
+  <button id="toggleAuth" type="button" class="link-button">Нет аккаунта? Зарегистрироваться</button>
+  <p id="authInfo" class="info" role="status"></p>
+  <p id="authErr" class="err" role="alert"></p>
+</section>
 
-<!-- ЭКРАН ВХОДА / РЕГИСТРАЦИИ -->
-<div id="auth" class="panel">
-  <h1 style="margin-bottom:16px">💬 Мессенджер</h1>
-  <input id="regNick"  placeholder="Ник (виден собеседнику)" style="display:none">
-  <input id="regEmail" placeholder="E-mail">
-  <input id="regPass"  placeholder="Пароль (минимум 6 символов)" type="password">
-  <div id="authForm">
-    <button id="loginBtn">Войти</button>
-    <button id="regBtn" style="background:#73daca; display:none">Создать аккаунт</button>
-  </div>
-  <a href="#" id="toggleAuth" style="color:#7aa2f7; font-size:13px">Нет аккаунта? Зарегистрироваться</a>
-  <div class="err" id="authErr"></div>
-</div>
+<section id="profilePanel" class="panel" hidden>
+  <h2>Завершение регистрации</h2>
+  <p>Выберите ник, по которому вас смогут найти друзья.</p>
+  <form id="profileForm" novalidate>
+    <input id="profileNick" aria-label="Ник" placeholder="Ник: от 3 до 32 символов" autocomplete="nickname" maxlength="64">
+    <button id="profileSaveBtn" type="submit">Сохранить ник</button>
+  </form>
+  <p id="profileErr" class="err" role="alert"></p>
+  <button id="profileLogout" type="button" class="link-button">Выйти из аккаунта</button>
+</section>
 
-<!-- ОСНОВНОЙ ЭКРАН -->
-<div id="app">
+<main id="app" hidden>
   <header>
     <h1>💬 Мессенджер</h1>
-    <span id="myId" title="Нажмите, чтобы скопировать"></span>
-    <span style="margin-left:auto; font-size:13px; cursor:pointer; color:#f7768e" id="logout">Выйти</span>
+    <button id="myId" type="button" class="link-button" title="Скопировать ник"></button>
+    <button id="logout" type="button" class="link-button">Выйти</button>
   </header>
-
   <div id="connectBar">
-    <input id="peerInput" placeholder="Ник собеседника">
-    <input id="encKey" type="password" placeholder="🔐 Общий ключ шифрования">
-    <button class="btn" id="connectBtn">Подключиться</button>
-    <button class="btn" id="callBtn" disabled>📞 Позвонить</button>
-    <button class="btn" id="hangBtn" style="display:none">🔴 Сбросить</button>
+    <input id="peerInput" aria-label="Ник собеседника" placeholder="Ник собеседника" autocomplete="off" maxlength="64">
+    <button id="connectBtn" type="button" disabled>Подключиться</button>
+    <button id="disconnectBtn" type="button" class="secondary" hidden>Отключиться</button>
+    <button id="callBtn" type="button" disabled>📞 Позвонить</button>
+    <button id="hangBtn" type="button" class="danger" hidden>Завершить звонок</button>
+    <input id="encKey" type="password" aria-label="Общий пароль шифрования" placeholder="Общий пароль шифрования" autocomplete="off" maxlength="1024">
+    <button id="applyKeyBtn" type="button" class="secondary">Применить ключ</button>
+    <p id="encStatus" role="status"></p>
   </div>
-
-  <div id="chat"></div>
-
-  <div id="videos">
-    <video id="localVideo" autoplay muted playsinline></video>
-    <video id="remoteVideo" autoplay playsinline></video>
+  <div id="statusBar">
+    <p id="appStatus" role="status"></p>
+    <button id="retryPeerBtn" type="button" class="secondary" hidden>Повторить</button>
   </div>
-
-  <div id="controls">
-    <button class="btn" id="muteBtn">🔇 Микрофон</button>
-    <button class="btn" id="camBtn">📷 Камера</button>
+  <section id="incomingCall" role="region" aria-label="Входящий звонок" hidden>
+    <p id="incomingCaller" role="status"></p>
+    <button id="acceptCallBtn" type="button">Принять</button>
+    <button id="rejectCallBtn" type="button" class="danger">Отклонить</button>
+  </section>
+  <p id="callStatus" role="status"></p>
+  <div id="videos" hidden>
+    <video id="localVideo" autoplay muted playsinline aria-label="Ваше видео"></video>
+    <video id="remoteVideo" autoplay playsinline controls aria-label="Видео собеседника"></video>
   </div>
-
-  <div id="inputBar">
-    <input id="msgInput" placeholder="Сообщение...">
-    <button class="btn" id="sendBtn">➤</button>
+  <div id="controls" hidden>
+    <button id="muteBtn" type="button">Выключить микрофон</button>
+    <button id="camBtn" type="button">Выключить камеру</button>
   </div>
-</div>
-
+  <div id="chat" role="log" aria-label="Переписка" aria-live="polite"></div>
+  <form id="messageForm">
+    <input id="msgInput" aria-label="Сообщение" placeholder="Сообщение…" maxlength="8000" autocomplete="off" disabled>
+    <button id="sendBtn" type="submit" disabled>Отправить</button>
+  </form>
+</main>
 <script>
-// ==== КОНФИГ SUPABASE ====
-const SUPABASE_URL = "https://pwqppyenyhdcifexjjnm.supabase.co";
-const SUPABASE_KEY = "sb_publishable_wNMT0l65AYITob1IT8ax1w_6wxsXDSu"; 
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+'use strict';
+
+const SUPABASE_URL = 'https://pwqppyenyhdcifexjjnm.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_wNMT0l65AYITob1IT8ax1w_6wxsXDSu';
 const $ = id => document.getElementById(id);
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
+const MAX_MESSAGE_LENGTH = 8000;
+const MAX_PENDING_MESSAGES = 30;
+
+let db = null;
 let regMode = false;
+let authBusy = false;
+let authRevision = 0;
+let restoreTask = null;
+let currentUser = null;
+let myName = '';
+let peer = null;
+let peerReady = false;
+let conn = null;
+let connectionTimer = null;
+let callSession = null;
+let sendBusy = false;
+let receiveQueue = Promise.resolve();
+let keyCache = null;
+let pendingEncrypted = [];
 
-$('toggleAuth').onclick = e => {
-  e.preventDefault();
-  regMode = !regMode;
-  $('regNick').style.display = regMode ? 'block' : 'none';
-  $('regBtn').style.display  = regMode ? 'inline-block' : 'none';
-  $('loginBtn').style.display = regMode ? 'none' : 'inline-block';
+function errorText(error, fallback = 'Не удалось выполнить действие. Попробуйте ещё раз.') {
+  const message = String(error?.message || '');
+  if (/failed to fetch|fetch failed|network|load failed/i.test(message)) {
+    return 'Нет связи с сервером. Проверьте интернет и повторите попытку.';
+  }
+  if (/Invalid login credentials/i.test(message)) return 'Неверный e-mail или пароль.';
+  if (/Email not confirmed/i.test(message)) return 'Сначала подтвердите e-mail по ссылке в письме.';
+  if (/already registered|already exists/i.test(message)) return 'Этот e-mail уже зарегистрирован. Войдите в аккаунт.';
+  if (error?.status === 429 || /rate limit|too many requests/i.test(message)) {
+    return 'Слишком много попыток. Подождите немного и повторите.';
+  }
+  if (error?.code === '42501') return 'Сервер запретил доступ к профилю. Обратитесь к владельцу приложения.';
+  return message || fallback;
+}
+
+function removeOldNickname() {
+  try { localStorage.removeItem('nick'); } catch { /* Хранилище может быть отключено браузером. */ }
+}
+
+function normalizeNickname(value) {
+  return String(value || '').trim().normalize('NFC');
+}
+
+function validateNickname(value) {
+  const nickname = normalizeNickname(value);
+  if (!/^[\p{L}\p{N}_-]{3,32}$/u.test(nickname)) {
+    throw new Error('Ник: от 3 до 32 букв, цифр, знаков _ или -. Пробелы не допускаются.');
+  }
+  return nickname;
+}
+
+function peerIdForNickname(nickname) {
+  return 'chat-' + Array.from(encoder.encode(normalizeNickname(nickname)),
+    byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+function nicknameFromPeerId(id) {
+  if (typeof id !== 'string' || !/^chat-(?:[0-9a-f]{2}){3,128}$/.test(id)) return null;
+  try {
+    const nickname = decoder.decode(Uint8Array.from(id.slice(5).match(/../g), hex => parseInt(hex, 16)));
+    return validateNickname(nickname) === nickname && peerIdForNickname(nickname) === id ? nickname : null;
+  } catch { return null; }
+}
+
+function setRegMode(value) {
+  regMode = value;
+  $('regNick').hidden = !regMode;
+  $('regBtn').hidden = !regMode;
+  $('loginBtn').hidden = regMode;
+  $('regPass').autocomplete = regMode ? 'new-password' : 'current-password';
   $('toggleAuth').textContent = regMode ? 'Уже есть аккаунт? Войти' : 'Нет аккаунта? Зарегистрироваться';
-  $('authErr').textContent = '';
-};
+}
 
-$('regBtn').onclick = async () => {
-  const nick = $('regNick').value.trim(), email = $('regEmail').value.trim(), pass = $('regPass').value;
-  $('authErr').textContent = '';
-  if (!nick || nick.length < 3) return $('authErr').textContent = 'Ник минимум 3 символа';
-  if (pass.length < 6)          return $('authErr').textContent = 'Пароль минимум 6 символов';
+function setAuthBusy(value) {
+  authBusy = value;
+  for (const id of ['regNick', 'regEmail', 'regPass', 'loginBtn', 'regBtn', 'toggleAuth', 'profileNick', 'profileSaveBtn']) {
+    $(id).disabled = value || !db;
+  }
+}
+
+function showAuth() {
+  $('auth').hidden = false;
+  $('profilePanel').hidden = true;
+  $('app').hidden = true;
+}
+
+function showProfileSetup(user, message = '') {
+  currentUser = user;
+  $('auth').hidden = true;
+  $('profilePanel').hidden = false;
+  $('app').hidden = true;
+  $('profileNick').value = normalizeNickname(user.user_metadata?.nickname);
+  $('profileErr').textContent = message;
+}
+
+async function findProfile(column, value) {
+  const { data, error } = await db.from('profiles').select('uid,nickname').eq(column, value).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+async function saveProfile(user, nickname) {
+  const revision = authRevision;
+  const checkSession = () => {
+    if (revision !== authRevision || currentUser?.id !== user.id) throw new Error('Сессия изменилась. Войдите снова.');
+  };
+  checkSession();
+  const existing = await findProfile('uid', user.id);
+  checkSession();
+  if (existing) return existing;
+
+  const taken = await findProfile('nickname', nickname);
+  checkSession();
+  if (taken && taken.uid !== user.id) throw new Error('Этот ник уже занят. Выберите другой.');
+  const { data, error } = await db.from('profiles')
+    .insert({ uid: user.id, nickname }).select('uid,nickname').single();
+  if (!error) return data || { uid: user.id, nickname };
+
+  if (error.code === '23505') {
+    // Другая вкладка или серверный обработчик могли уже создать наш профиль.
+    const created = await findProfile('uid', user.id);
+    if (created) return created;
+    throw new Error('Этот ник уже занят. Выберите другой.');
+  }
+  throw error;
+}
+
+async function loadSession(session, revision) {
+  if (!session?.user) return;
+  const { data, error } = await db.auth.getUser();
+  if (revision !== authRevision) return;
+  if (error) throw error;
+  if (!data?.user || data.user.id !== session.user.id) {
+    throw new Error('Сессия закончилась. Войдите снова.');
+  }
+  const user = data.user;
+  currentUser = user;
+  let profile;
   try {
-    const { data: taken } = await db.from('profiles').select('nickname').eq('nickname', nick).maybeSingle();
-    if (taken) return $('authErr').textContent = 'Этот ник уже занят';
-
-    const { error: signErr } = await db.auth.signUp({ email, password: pass });
-    if (signErr) throw signErr;
-
-    const { error: insErr } = await db.from('profiles')
-      .insert({ nickname: nick, uid: (await db.auth.getUser()).data.user.id });
-    if (insErr) {
-      if (insErr.code === '23505') return $('authErr').textContent = 'Этот ник уже занят';
-      throw insErr;
+    profile = await findProfile('uid', user.id);
+    if (revision !== authRevision) return;
+    if (!profile) {
+      const candidate = user.user_metadata?.nickname;
+      if (!candidate) {
+        if (revision === authRevision) showProfileSetup(user);
+        return;
+      }
+      profile = await saveProfile(user, validateNickname(candidate));
     }
-    localStorage.setItem('nick', nick);
-    startApp(nick);
-  } catch (err) {
-    $('authErr').textContent =
-      err.code === 'user_already_exists' ? 'Такой e-mail уже зарегистрирован' :
-      err.code === 'validation_failed'   ? 'Проверьте e-mail и пароль (минимум 6 символов)' :
-      err.message || 'Ошибка регистрации';
-  }
-};
-
-$('loginBtn').onclick = async () => {
-  const email = $('regEmail').value.trim(), pass = $('regPass').value;
-  $('authErr').textContent = '';
-  try {
-    const { error } = await db.auth.signInWithPassword({ email, password: pass });
-    if (error) throw error;
-    const uid = (await db.auth.getUser()).data.user.id;
-    const { data, error: pErr } = await db.from('profiles').select('nickname').eq('uid', uid).maybeSingle();
-    if (pErr || !data) throw new Error('Профиль не найден');
-    localStorage.setItem('nick', data.nickname);
-    startApp(data.nickname);
-  } catch (err) {
-    $('authErr').textContent = err.message.includes('Invalid login')
-      ? 'Неверный e-mail или пароль' : 'Ошибка: ' + (err.message || err.code);
-  }
-};
-
-db.auth.getSession().then(async ({ data }) => {
-  if (!data.session || localStorage.getItem('nick')) {
-    if (data.session && localStorage.getItem('nick')) startApp(localStorage.getItem('nick'));
+  } catch (error) {
+    if (revision === authRevision) showProfileSetup(user, errorText(error));
     return;
   }
-  const uid = data.session.user.id;
-  const { data: p } = await db.from('profiles').select('nickname').eq('uid', uid).maybeSingle();
-  if (p) { localStorage.setItem('nick', p.nickname); startApp(p.nickname); }
-});
-
-$('logout').onclick = async () => {
-  await db.auth.signOut();
-  location.reload();
-};
-
-// ==== ШИФРОВАНИЕ ПЕРЕПИСКИ (AES-GCM поверх канала) ====
-const enc = new TextEncoder(), dec = new TextDecoder();
-let aesKey = null;
-
-async function deriveKey(secret) {
-  const raw = await crypto.subtle.importKey('raw', enc.encode(secret), 'PBKDF2', false, ['deriveKey']);
-  return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt: enc.encode('messenger-e2ee-v1'), iterations: 150000, hash: 'SHA-256' },
-    raw, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
-  );
-}
-const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
-const unb64 = str => Uint8Array.from(atob(str), c => c.charCodeAt(0));
-
-async function encryptMsg(text) {
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const data = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, aesKey, enc.encode(text));
-  return { iv: b64(iv), data: b64(data) };
-}
-async function decryptMsg(packet) {
-  const plain = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv: unb64(packet.iv) }, aesKey, unb64(packet.data));
-  return dec.decode(plain);
+  if (revision !== authRevision) return;
+  startApp(profile.nickname, user);
 }
 
-// ==== МЕССЕНДЖЕР ====
-let peer, myStream, activeCall, conn, myName;
-
-function startApp(nick) {
-  myName = nick;
-  $('auth').style.display = 'none';
-  $('app').style.display = 'flex';
-  peer = new Peer(nick);
-  peer.on('open', id => $('myId').textContent = 'Мой ник: ' + id);
-  peer.on('error', e => {
-    if (e.type === 'peer-unavailable') addMsg('Пользователь не в сети', 'meta');
-    else alert('Ошибка сети: ' + e.type);
+function restoreSession(session) {
+  if (!session?.user) {
+    endSession();
+    return Promise.resolve();
+  }
+  if (currentUser?.id === session.user.id && peer && !peer.destroyed && !$('app').hidden) return Promise.resolve();
+  if (restoreTask?.uid === session.user.id) return restoreTask.promise;
+  if (currentUser && currentUser.id !== session.user.id) {
+    teardownApp();
+    currentUser = null;
+    myName = '';
+    showAuth();
+  }
+  const revision = ++authRevision;
+  const task = { uid: session.user.id, promise: null };
+  task.promise = loadSession(session, revision).finally(() => {
+    if (restoreTask === task) restoreTask = null;
   });
-  peer.on('connection', c => bindConn(c));
-  peer.on('call', async call => {
-    await getStream();
-    activeCall = call; call.answer(myStream); bindCall(call);
-  });
+  restoreTask = task;
+  return task.promise;
 }
 
-function bindConn(c) {
-  conn = c;
-  conn.on('open', () => { $('connectBtn').disabled = true; addMsg('Собеседник подключён ✅', 'meta'); });
-  conn.on('data', async d => {
-    if (d.type !== 'msg') return;
-    if (d.encrypted) {
-      if (!aesKey) return addMsg('🔐 Зашифрованное сообщение — введите общий ключ шифрования', 'meta');
-      try { addMsg(await decryptMsg(d), 'in'); }
-      catch { addMsg('🔐 [не удалось расшифровать — ключ не совпадает]', 'meta'); }
-    } else {
-      addMsg(d.text, 'in');
-    }
-  });
-  conn.on('close', () => { addMsg('Собеседник отключён', 'meta'); $('connectBtn').disabled = false; });
+function endSession() {
+  ++authRevision;
+  restoreTask = null;
+  teardownApp();
+  currentUser = null;
+  myName = '';
+  removeOldNickname();
+  $('regPass').value = '';
+  $('encKey').value = '';
+  keyCache = null;
+  showAuth();
 }
 
-function bindCall(call) {
-  call.on('stream', remote => {
-    $('remoteVideo').srcObject = remote;
-    $('videos').style.display = 'flex'; $('controls').style.display = 'flex';
-    $('chat').style.display = 'none'; $('inputBar').style.display = 'none';
-    $('hangBtn').style.display = 'inline-block'; $('callBtn').disabled = true;
-  });
-  call.on('close', endCall);
-  call.on('error', endCall);
-}
-
-async function getStream() {
-  if (myStream) return;
+async function submitAuth(event) {
+  event.preventDefault();
+  if (authBusy || !db) return;
+  ++authRevision;
+  restoreTask = null;
+  $('authErr').textContent = '';
+  $('authInfo').textContent = '';
+  setAuthBusy(true);
   try {
-    myStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    $('localVideo').srcObject = myStream;
+    const email = $('regEmail').value.trim();
+    const password = $('regPass').value;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Введите корректный e-mail.');
+    if (!password) throw new Error('Введите пароль.');
+
+    if (regMode) {
+      const nickname = validateNickname($('regNick').value);
+      if (password.length < 6) throw new Error('Пароль должен содержать не меньше 6 символов.');
+      // Ошибка запроса больше не считается признаком свободного ника.
+      if (await findProfile('nickname', nickname)) throw new Error('Этот ник уже занят.');
+      const { data, error } = await db.auth.signUp({
+        email, password, options: { data: { nickname } }
+      });
+      if (error) throw error;
+      $('regPass').value = '';
+      if (!data?.session) {
+        setRegMode(false);
+        $('authInfo').textContent = 'Проверьте почту: перейдите по ссылке подтверждения, затем войдите здесь. Если аккаунт уже существует, используйте вход.';
+        return;
+      }
+      await restoreSession(data.session);
+    } else {
+      const { data, error } = await db.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      if (!data?.session) throw new Error('Войти не удалось. Повторите попытку.');
+      $('regPass').value = '';
+      await restoreSession(data.session);
+    }
+  } catch (error) {
+    $('authErr').textContent = errorText(error);
+  } finally {
+    setAuthBusy(false);
+  }
+}
+
+async function submitProfile(event) {
+  event.preventDefault();
+  if (authBusy || !currentUser || !db) return;
+  const user = currentUser;
+  const revision = authRevision;
+  setAuthBusy(true);
+  $('profileErr').textContent = '';
+  try {
+    const profile = await saveProfile(user, validateNickname($('profileNick').value));
+    if (revision === authRevision && currentUser?.id === user.id) startApp(profile.nickname, user);
+  } catch (error) {
+    $('profileErr').textContent = errorText(error);
+  } finally {
+    setAuthBusy(false);
+  }
+}
+
+async function logout() {
+  if (authBusy || !db) return;
+  teardownApp();
+  setAuthBusy(true);
+  try {
+    const { error } = await db.auth.signOut({ scope: 'local' });
+    if (error) throw error;
+    endSession();
+    $('authInfo').textContent = '';
+    $('authErr').textContent = '';
+  } catch (error) {
+    const target = $('profilePanel').hidden ? $('appStatus') : $('profileErr');
+    target.textContent = 'Не удалось выйти: ' + errorText(error);
+  } finally {
+    setAuthBusy(false);
+  }
+}
+
+
+let connecting = false;
+let connectionRole = null;
+
+function addMsg(text, kind = 'meta') {
+  const node = document.createElement('div');
+  node.className = 'msg ' + kind;
+  node.textContent = text;
+  $('chat').appendChild(node);
+  while ($('chat').childElementCount > 500) $('chat').firstElementChild.remove();
+  $('chat').scrollTop = $('chat').scrollHeight;
+  return node;
+}
+
+function updateControls() {
+  const connected = !!conn?.open;
+  $('connectBtn').disabled = !peerReady || !!conn || connecting;
+  $('peerInput').disabled = !!conn || connecting;
+  $('disconnectBtn').hidden = !conn;
+  $('sendBtn').disabled = !connected || sendBusy;
+  $('msgInput').disabled = !connected;
+  $('callBtn').disabled = !connected || !!callSession;
+  $('hangBtn').hidden = !callSession || callSession.phase === 'incoming';
+  $('incomingCall').hidden = callSession?.phase !== 'incoming';
+  $('retryPeerBtn').hidden = peerReady;
+}
+
+function startApp(nickname, user) {
+  if (currentUser?.id === user.id && myName === nickname && peer && !$('app').hidden) return;
+  teardownApp();
+  currentUser = user;
+  myName = validateNickname(nickname);
+  removeOldNickname();
+  $('auth').hidden = true;
+  $('profilePanel').hidden = true;
+  $('app').hidden = false;
+  $('chat').replaceChildren();
+  $('myId').textContent = 'Мой ник: ' + myName;
+  $('regPass').value = '';
+  startPeer();
+  updateEncryptionStatus();
+}
+
+function teardownApp() {
+  disconnectConversation(false);
+  const oldPeer = peer;
+  peer = null;
+  peerReady = false;
+  connecting = false;
+  if (oldPeer && !oldPeer.destroyed) oldPeer.destroy();
+  updateControls();
+}
+
+function startPeer() {
+  if (!currentUser) return;
+  if (typeof Peer !== 'function') {
+    $('appStatus').textContent = 'Не загрузился модуль связи. Проверьте интернет и обновите страницу.';
+    return;
+  }
+  const oldPeer = peer;
+  peer = null;
+  if (oldPeer && !oldPeer.destroyed) oldPeer.destroy();
+  peerReady = false;
+  $('appStatus').textContent = 'Подключение к сети…';
+  try {
+    const instance = new Peer(peerIdForNickname(myName));
+    peer = instance;
+    instance.on('open', () => {
+      if (peer !== instance) return;
+      peerReady = true;
+      $('appStatus').textContent = 'Вы в сети. Введите ник собеседника или дождитесь подключения.';
+      updateControls();
+    });
+    instance.on('connection', incoming => {
+      if (peer !== instance || !currentUser) return incoming.close();
+      const nickname = nicknameFromPeerId(incoming.peer);
+      if (!nickname) return incoming.close();
+      bindConnection(incoming, nickname, true);
+    });
+    instance.on('call', incoming => {
+      if (peer !== instance) return incoming.close();
+      offerIncomingCall(incoming);
+    });
+    instance.on('disconnected', () => {
+      if (peer !== instance) return;
+      peerReady = false;
+      $('appStatus').textContent = 'Связь с сервером соединений потеряна. Нажмите «Повторить».';
+      updateControls();
+    });
+    instance.on('close', () => {
+      if (peer !== instance) return;
+      peerReady = false;
+      disconnectConversation(false);
+      $('appStatus').textContent = 'Соединение с сетью закрыто. Нажмите «Повторить».';
+      updateControls();
+    });
+    instance.on('error', error => {
+      if (peer !== instance) return;
+      if (error.type === 'peer-unavailable') {
+        disconnectConversation(false);
+        $('appStatus').textContent = 'Собеседник не в сети или ник введён неверно.';
+      } else if (error.type === 'unavailable-id') {
+        peerReady = false;
+        $('appStatus').textContent = 'Этот ник уже подключён. Закройте другую вкладку с мессенджером и нажмите «Повторить».';
+      } else {
+        peerReady = !!instance.open;
+        $('appStatus').textContent = 'Не удалось установить связь: ' + (error.type || errorText(error));
+        if (conn && !conn.open) disconnectConversation(false);
+      }
+      updateControls();
+    });
+  } catch (error) {
+    $('appStatus').textContent = errorText(error, 'Не удалось подключиться к сети.');
+  }
+  updateControls();
+}
+
+function retryPeer() {
+  if (!currentUser) return;
+  if (peer?.disconnected && !peer.destroyed) {
+    try { peer.reconnect(); $('appStatus').textContent = 'Повторное подключение…'; }
+    catch (error) { $('appStatus').textContent = errorText(error); }
+  } else if (!conn) {
+    startPeer();
+  }
+}
+
+async function connectToPeer() {
+  if (connecting || conn || !peerReady || !peer) return;
+  const owner = peer;
+  connecting = true;
+  updateControls();
+  try {
+    const nickname = validateNickname($('peerInput').value);
+    if (nickname === myName) throw new Error('Введите ник другого пользователя.');
+    await getMessageKey();
+    if (peer !== owner || !peerReady || conn || !currentUser) return;
+    const connection = owner.connect(peerIdForNickname(nickname), {
+      reliable: true, serialization: 'json', metadata: { protocol: 1 }
+    });
+    if (!connection) throw new Error('Не удалось начать подключение.');
+    bindConnection(connection, nickname, false);
+  } catch (error) {
+    $('appStatus').textContent = errorText(error);
+  } finally {
+    connecting = false;
+    updateControls();
+  }
+}
+
+function bindConnection(connection, nickname, incoming) {
+  if (conn && conn !== connection) {
+    // При одновременном подключении оба клиента выбирают один и тот же канал.
+    const preferIncoming = incoming && !conn.open && connection.peer === conn.peer
+      && connectionRole === 'outgoing' && peer?.id > connection.peer;
+    if (!preferIncoming) { connection.close(); return; }
+    disconnectConversation(false);
+  }
+  conn = connection;
+  connectionRole = incoming ? 'incoming' : 'outgoing';
+  pendingEncrypted = [];
+  receiveQueue = Promise.resolve();
+  $('peerInput').value = nickname;
+  $('appStatus').textContent = 'Подключение к ' + nickname + '…';
+  let opened = false;
+  const onOpen = () => {
+    if (conn !== connection || opened) return;
+    opened = true;
+    clearTimeout(connectionTimer);
+    connectionTimer = null;
+    $('appStatus').textContent = 'Подключён: ' + nickname;
+    addMsg('Собеседник подключён: ' + nickname);
+    updateControls();
+  };
+  connection.on('open', onOpen);
+  connection.on('data', packet => {
+    if (conn !== connection) return;
+    if (packet?.type === 'call-control') { handleCallControl(packet); return; }
+    receiveQueue = receiveQueue.then(() => receiveMessage(connection, packet)).catch(error => {
+      if (conn === connection) addMsg(errorText(error, 'Не удалось принять сообщение.'));
+    });
+  });
+  connection.on('close', () => {
+    if (conn !== connection) return;
+    disconnectConversation(false);
+    $('appStatus').textContent = 'Собеседник отключился.';
+    addMsg('Собеседник отключился.');
+  });
+  connection.on('error', error => {
+    if (conn !== connection) return;
+    disconnectConversation(false);
+    $('appStatus').textContent = 'Ошибка соединения: ' + errorText(error);
+  });
+  clearTimeout(connectionTimer);
+  connectionTimer = setTimeout(() => {
+    if (conn !== connection || connection.open) return;
+    disconnectConversation(false);
+    $('appStatus').textContent = 'Собеседник не ответил. Проверьте ник и подключение к интернету.';
+  }, 20000);
+  if (connection.open) onOpen();
+  updateControls();
+}
+
+function disconnectConversation(showMessage = true) {
+  if (callSession) finishCall(callSession, true);
+  const oldConnection = conn;
+  conn = null;
+  connectionRole = null;
+  clearTimeout(connectionTimer);
+  connectionTimer = null;
+  pendingEncrypted = [];
+  receiveQueue = Promise.resolve();
+  sendBusy = false;
+  if (oldConnection) {
+    try { oldConnection.close(); } catch { /* Канал уже мог закрыться. */ }
+  }
+  if (showMessage && oldConnection) {
+    addMsg('Вы отключились от собеседника.');
+    $('appStatus').textContent = 'Соединение закрыто.';
+  }
+  updateControls();
+}
+
+function base64Encode(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let offset = 0; offset < bytes.length; offset += 8192) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 8192));
+  }
+  return btoa(binary);
+}
+
+function base64Decode(value) {
+  if (typeof value !== 'string' || value.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(value)) {
+    throw new Error('Получено повреждённое сообщение.');
+  }
+  return Uint8Array.from(atob(value), character => character.charCodeAt(0));
+}
+
+function getMessageKey() {
+  const secret = $('encKey').value;
+  if (!secret) return Promise.resolve(null);
+  if (secret.length > 1024) return Promise.reject(new Error('Общий пароль слишком длинный.'));
+  if (!globalThis.crypto?.subtle) {
+    return Promise.reject(new Error('Для шифрования откройте приложение по HTTPS или на localhost.'));
+  }
+  if (keyCache?.secret === secret) return keyCache.promise;
+  const cached = { secret, promise: null };
+  cached.promise = (async () => {
+    const raw = await crypto.subtle.importKey('raw', encoder.encode(secret), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey({
+      name: 'PBKDF2', salt: encoder.encode('messenger-e2ee-v1'), iterations: 150000, hash: 'SHA-256'
+    }, raw, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+  })().catch(error => {
+    if (keyCache === cached) keyCache = null;
+    throw error;
+  });
+  keyCache = cached;
+  return cached.promise;
+}
+
+function updateEncryptionStatus() {
+  if (keyCache && keyCache.secret !== $('encKey').value) keyCache = null;
+  $('encStatus').textContent = $('encKey').value
+    ? 'Общий пароль задан. Собеседнику нужен точно такой же пароль.'
+    : 'Общий пароль не задан. Дополнительное шифрование переписки выключено.';
+}
+
+async function applyEncryptionKey() {
+  updateEncryptionStatus();
+  try {
+    const key = await getMessageKey();
+    if (!key) return;
+    for (const entry of [...pendingEncrypted]) await decryptEntry(entry, key);
+  } catch (error) {
+    $('encStatus').textContent = errorText(error);
+  }
+}
+
+async function decryptEntry(entry, key) {
+  if (conn !== entry.connection) return;
+  try {
+    const iv = base64Decode(entry.packet.iv);
+    const data = base64Decode(entry.packet.data);
+    if (iv.length !== 12 || data.length < 16) throw new Error('Неверный формат.');
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
+    if (conn !== entry.connection || !pendingEncrypted.includes(entry)) return;
+    const text = decoder.decode(plain);
+    if (text.length > MAX_MESSAGE_LENGTH) throw new Error('Сообщение слишком длинное.');
+    entry.node.className = 'msg in';
+    entry.node.textContent = text;
+    pendingEncrypted = pendingEncrypted.filter(item => item !== entry);
   } catch {
-    myStream = new MediaStream(); // звонок без камеры/микрофона
+    if (conn === entry.connection && pendingEncrypted.includes(entry)) entry.node.textContent = 'Не удалось расшифровать сообщение. Проверьте общий пароль и нажмите «Применить ключ».';
   }
 }
 
-$('connectBtn').onclick = async () => {
-  const id = $('peerInput').value.trim();
-  if (!id) return;
-  const secret = $('encKey').value.trim();
-  if (secret) {
-    aesKey = await deriveKey(secret);
-    addMsg('🔐 Шифрование переписки включено', 'meta');
+async function receiveMessage(connection, packet) {
+  if (conn !== connection || !packet || typeof packet !== 'object' || packet.type !== 'msg') return;
+  if (packet.encrypted === true) {
+    if (typeof packet.iv !== 'string' || packet.iv.length !== 16 ||
+        typeof packet.data !== 'string' || packet.data.length > 44000) {
+      throw new Error('Получено повреждённое или слишком длинное сообщение.');
+    }
+    if (pendingEncrypted.length >= MAX_PENDING_MESSAGES) {
+      const dropped = pendingEncrypted.shift();
+      dropped.node.textContent = 'Сообщение не расшифровано: слишком много ожидающих сообщений.';
+    }
+    const entry = {
+      connection, packet,
+      node: addMsg('Получено зашифрованное сообщение. Введите общий пароль и нажмите «Применить ключ».')
+    };
+    pendingEncrypted.push(entry);
+    const key = await getMessageKey();
+    if (key) await decryptEntry(entry, key);
   } else {
-    aesKey = null;
-    addMsg('⚠️ Ключ шифрования пуст — сообщения пойдут открытым текстом', 'meta');
+    if (packet.encrypted !== undefined && packet.encrypted !== false) return;
+    if (typeof packet.text !== 'string' || packet.text.length > MAX_MESSAGE_LENGTH) return;
+    if ($('encKey').value) {
+      addMsg('Собеседник отправил сообщение без общего ключа. Согласуйте настройки шифрования.');
+      return;
+    }
+    addMsg(packet.text, 'in');
   }
-  bindConn(peer.connect(id, { reliable: true }));
-};
-
-$('callBtn').onclick = async () => {
-  if (!conn) return alert('Сначала подключитесь к собеседнику');
-  await getStream();
-  activeCall = peer.call(conn.peer, myStream);
-  bindCall(activeCall);
-};
-
-$('hangBtn').onclick = () => { if (activeCall) activeCall.close(); endCall(); };
-function endCall() {
-  $('videos').style.display = 'none'; $('controls').style.display = 'none';
-  $('chat').style.display = 'block'; $('inputBar').style.display = 'flex';
-  $('hangBtn').style.display = 'none'; $('callBtn').disabled = !conn;
-  if (myStream) myStream.getTracks().forEach(t => t.stop());
-  myStream = null; activeCall = null;
 }
 
+async function sendMessage() {
+  const connection = conn;
+  const text = $('msgInput').value;
+  if (sendBusy || !connection?.open || !text.trim()) return;
+  if (text.length > MAX_MESSAGE_LENGTH) {
+    $('appStatus').textContent = 'Сообщение слишком длинное: максимум ' + MAX_MESSAGE_LENGTH + ' символов.';
+    return;
+  }
+  sendBusy = true;
+  updateControls();
+  try {
+    const key = await getMessageKey();
+    let packet = { type: 'msg', text };
+    if (key) {
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoder.encode(text));
+      packet = { type: 'msg', encrypted: true, iv: base64Encode(iv), data: base64Encode(encrypted) };
+    }
+    if (conn !== connection || !connection.open) throw new Error('Собеседник отключился. Сообщение не отправлено.');
+    connection.send(packet);
+    if (conn !== connection || !connection.open) return;
+    addMsg(text, 'out');
+    if ($('msgInput').value === text) $('msgInput').value = '';
+  } catch (error) {
+    $('appStatus').textContent = errorText(error);
+  } finally {
+    sendBusy = false;
+    updateControls();
+  }
+}
+
+
+function stopStream(stream) {
+  stream?.getTracks().forEach(track => track.stop());
+}
+
+function mediaErrorText(error) {
+  if (error?.name === 'NotAllowedError' || error?.name === 'SecurityError') {
+    return 'Доступ к камере или микрофону запрещён. Разрешите его в настройках браузера и повторите звонок.';
+  }
+  if (error?.name === 'NotFoundError') return 'Камера или микрофон не найдены.';
+  if (error?.name === 'NotReadableError') return 'Камера или микрофон заняты другим приложением.';
+  return errorText(error, 'Не удалось включить камеру или микрофон.');
+}
+
+async function getLocalStream() {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    throw new Error('Для звонков откройте приложение по HTTPS или на localhost.');
+  }
+  try {
+    return await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+  } catch (error) {
+    if (error.name === 'NotFoundError' || error.name === 'OverconstrainedError') {
+      return navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+    }
+    throw error;
+  }
+}
+
+function newCallId() {
+  return Array.from(crypto.getRandomValues(new Uint8Array(16)), value => value.toString(16).padStart(2, '0')).join('');
+}
+
+function sendCallControl(id, action) {
+  if (!conn?.open) return;
+  try { conn.send({ type: 'call-control', id, action }); }
+  catch { /* Разрыв канала обработает обработчик соединения. */ }
+}
+
+function armCallTimeout(record) {
+  clearTimeout(record.timer);
+  record.timer = setTimeout(() => {
+    if (callSession === record) finishCall(record, true, 'Звонок завершён: время ожидания истекло.');
+  }, 60000);
+}
+
+function refreshMediaButtons() {
+  const audio = callSession?.stream?.getAudioTracks()[0];
+  const video = callSession?.stream?.getVideoTracks()[0];
+  $('muteBtn').disabled = !audio;
+  $('camBtn').disabled = !video;
+  $('muteBtn').textContent = audio?.enabled ? 'Выключить микрофон' : 'Включить микрофон';
+  $('camBtn').textContent = video?.enabled ? 'Выключить камеру' : 'Включить камеру';
+}
+
+function attachLocalStream(record, stream) {
+  if (callSession !== record || !conn?.open) {
+    stopStream(stream);
+    return false;
+  }
+  record.stream = stream;
+  $('localVideo').srcObject = stream;
+  $('videos').hidden = false;
+  $('controls').hidden = false;
+  refreshMediaButtons();
+  return true;
+}
+
+function bindMediaCall(record) {
+  const mediaCall = record.call;
+  mediaCall.on('stream', remote => {
+    if (callSession !== record) return;
+    record.phase = 'connected';
+    clearTimeout(record.timer);
+    $('remoteVideo').srcObject = remote;
+    $('videos').hidden = false;
+    $('controls').hidden = false;
+    $('callStatus').textContent = 'Звонок установлен.';
+    const playback = $('remoteVideo').play();
+    if (playback?.catch) playback.catch(() => {
+      if (callSession === record) $('callStatus').textContent = 'Нажмите ▶ на видео, чтобы включить звук.';
+    });
+    updateControls();
+  });
+  mediaCall.on('close', () => {
+    if (callSession === record) finishCall(record, false, 'Звонок завершён.');
+  });
+  mediaCall.on('error', error => {
+    if (callSession === record) finishCall(record, true, mediaErrorText(error));
+  });
+}
+
+function offerIncomingCall(mediaCall) {
+  const id = mediaCall.metadata?.callId;
+  if (!conn?.open || mediaCall.peer !== conn.peer || typeof id !== 'string' || !/^[0-9a-f]{32}$/.test(id)) {
+    mediaCall.close();
+    return;
+  }
+  if (callSession) {
+    sendCallControl(id, 'busy');
+    mediaCall.close();
+    return;
+  }
+  const record = { id, call: mediaCall, stream: null, phase: 'incoming', timer: null };
+  callSession = record;
+  bindMediaCall(record);
+  $('incomingCaller').textContent = 'Входящий звонок от ' + (nicknameFromPeerId(mediaCall.peer) || 'собеседника');
+  $('callStatus').textContent = '';
+  armCallTimeout(record);
+  updateControls();
+}
+
+async function acceptIncomingCall() {
+  const record = callSession;
+  if (!record || record.phase !== 'incoming') return;
+  record.phase = 'acquiring';
+  $('callStatus').textContent = 'Ожидание доступа к камере и микрофону…';
+  armCallTimeout(record);
+  updateControls();
+  try {
+    const stream = await getLocalStream();
+    if (!attachLocalStream(record, stream)) return;
+    record.phase = 'connecting';
+    record.call.answer(stream);
+    $('callStatus').textContent = 'Соединение звонка…';
+  } catch (error) {
+    if (callSession === record) finishCall(record, true, mediaErrorText(error));
+  }
+}
+
+async function startOutgoingCall() {
+  if (callSession || !conn?.open || !peer) return;
+  const connection = conn;
+  const owner = peer;
+  const record = { id: newCallId(), call: null, stream: null, phase: 'acquiring', timer: null };
+  callSession = record;
+  $('callStatus').textContent = 'Ожидание доступа к камере и микрофону…';
+  armCallTimeout(record);
+  updateControls();
+  try {
+    const stream = await getLocalStream();
+    if (!attachLocalStream(record, stream)) return;
+    if (conn !== connection || peer !== owner) {
+      finishCall(record, false);
+      return;
+    }
+    record.phase = 'connecting';
+    record.call = owner.call(connection.peer, stream, { metadata: { callId: record.id, protocol: 1 } });
+    if (!record.call) throw new Error('Не удалось начать звонок.');
+    bindMediaCall(record);
+    $('callStatus').textContent = 'Ожидание ответа собеседника…';
+  } catch (error) {
+    if (callSession === record) finishCall(record, true, mediaErrorText(error));
+  }
+}
+
+function finishCall(record, notifyRemote = true, message = '') {
+  if (callSession !== record) return;
+  const action = record.phase === 'incoming' ? 'declined' : 'ended';
+  callSession = null;
+  clearTimeout(record.timer);
+  if (notifyRemote) sendCallControl(record.id, action);
+  stopStream(record.stream);
+  record.stream = null;
+  if (record.call) {
+    try { record.call.close(); } catch { /* Звонок уже мог закрыться. */ }
+  }
+  $('localVideo').srcObject = null;
+  $('remoteVideo').srcObject = null;
+  $('videos').hidden = true;
+  $('controls').hidden = true;
+  $('callStatus').textContent = message;
+  refreshMediaButtons();
+  updateControls();
+}
+
+function handleCallControl(packet) {
+  if (!callSession || typeof packet.id !== 'string' || typeof packet.action !== 'string' || packet.id !== callSession.id) return;
+  const messages = {
+    declined: 'Собеседник отклонил звонок.',
+    busy: 'Собеседник сейчас занят.',
+    ended: 'Собеседник завершил звонок.'
+  };
+  if (Object.prototype.hasOwnProperty.call(messages, packet.action)) {
+    finishCall(callSession, false, messages[packet.action]);
+  }
+}
+
+$('authForm').onsubmit = submitAuth;
+$('profileForm').onsubmit = submitProfile;
+$('toggleAuth').onclick = () => {
+  if (authBusy) return;
+  setRegMode(!regMode);
+  $('authErr').textContent = '';
+  $('authInfo').textContent = '';
+};
+$('logout').onclick = logout;
+$('profileLogout').onclick = logout;
+$('connectBtn').onclick = connectToPeer;
+$('disconnectBtn').onclick = () => disconnectConversation();
+$('retryPeerBtn').onclick = retryPeer;
+$('applyKeyBtn').onclick = applyEncryptionKey;
+$('encKey').addEventListener('input', updateEncryptionStatus);
+$('encKey').addEventListener('change', applyEncryptionKey);
+$('messageForm').onsubmit = event => { event.preventDefault(); void sendMessage(); };
+$('callBtn').onclick = startOutgoingCall;
+$('acceptCallBtn').onclick = acceptIncomingCall;
+$('rejectCallBtn').onclick = () => {
+  if (callSession?.phase === 'incoming') finishCall(callSession, true, 'Вы отклонили звонок.');
+};
+$('hangBtn').onclick = () => {
+  if (callSession) finishCall(callSession, true, 'Звонок завершён.');
+};
 $('muteBtn').onclick = () => {
-  const t = myStream?.getAudioTracks()[0];
-  if (t) t.enabled = !t.enabled;
-  $('muteBtn').textContent = t?.enabled ? '🔇 Микрофон' : '🔊 Включить';
+  const track = callSession?.stream?.getAudioTracks()[0];
+  if (track) track.enabled = !track.enabled;
+  refreshMediaButtons();
 };
 $('camBtn').onclick = () => {
-  const t = myStream?.getVideoTracks()[0];
-  if (t) t.enabled = !t.enabled;
-  $('camBtn').textContent = t?.enabled ? '📷 Камера' : '🎥 Включить камеру';
+  const track = callSession?.stream?.getVideoTracks()[0];
+  if (track) track.enabled = !track.enabled;
+  refreshMediaButtons();
+};
+$('myId').onclick = async () => {
+  try {
+    if (!navigator.clipboard?.writeText) throw new Error('Копирование недоступно.');
+    await navigator.clipboard.writeText(myName);
+    $('appStatus').textContent = 'Ник скопирован.';
+  } catch {
+    $('appStatus').textContent = 'Ваш ник: ' + myName;
+  }
 };
 
-async function send() {
-  const text = $('msgInput').value.trim();
-  if (!text || !conn) return;
-  const payload = aesKey ? { type: 'msg', encrypted: true, ...(await encryptMsg(text)) }
-                         : { type: 'msg', text };
-  conn.send(payload);
-  addMsg(text, 'out');
-  $('msgInput').value = '';
+async function initializeApp() {
+  removeOldNickname();
+  setRegMode(false);
+  updateControls();
+  updateEncryptionStatus();
+  try {
+    if (!window.supabase?.createClient) throw new Error('Не загрузился модуль входа. Проверьте интернет и обновите страницу.');
+    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    setAuthBusy(false);
+    db.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') { endSession(); return; }
+      if (event !== 'INITIAL_SESSION' && event !== 'SIGNED_IN' && event !== 'USER_UPDATED') return;
+      const revision = authRevision;
+      setTimeout(() => {
+        if (authBusy || revision !== authRevision) return;
+        restoreSession(session).catch(error => { $('authErr').textContent = errorText(error); });
+      }, 0);
+    });
+    const revision = authRevision;
+    const { data, error } = await db.auth.getSession();
+    if (error) throw error;
+    if (!authBusy && revision === authRevision) await restoreSession(data?.session);
+  } catch (error) {
+    $('authErr').textContent = errorText(error);
+    setAuthBusy(false);
+  }
 }
-$('sendBtn').onclick = send;
-$('msgInput').addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
 
-function addMsg(text, cls) {
-  const div = document.createElement('div');
-  div.className = 'msg ' + cls;
-  div.textContent = text;
-  $('chat').appendChild(div);
-  $('chat').scrollTop = 1e6;
-}
+window.addEventListener('pagehide', teardownApp);
+window.addEventListener('pageshow', event => {
+  if (event.persisted && db) {
+    db.auth.getSession().then(({ data, error }) => {
+      if (error) throw error;
+      return restoreSession(data?.session);
+    }).catch(error => { $('authErr').textContent = errorText(error); });
+  }
+});
+void initializeApp();
+
 </script>
 </body>
 </html>
